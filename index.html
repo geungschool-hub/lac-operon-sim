@@ -1369,7 +1369,7 @@ function checkTable(){
      ② 효소 한 벌이 젖당을 1개씩 분해한다
      ③ 효소는 사라지지 않는다(단순화 — 화면에 밝혀 두었다)
    ★순수 함수 timeStep() 이 한 칸을 계산한다. 검사가 이것을 직접 문다. */
-var T_MAX = 20, LAC_ADD = 8, L_MAX = 16, Y_MAX = 16;
+var T_MAX = 20, LAC_ADD = 8, L_MAX = 16, Y_MAX = 20;
 function timeStep(cur){
   var tx = cur.L > 0;
   var E = cur.E + (tx ? 1 : 0);
@@ -1423,7 +1423,7 @@ function tmGraphSvg(){
   function gy(v){ return YB - (YB - YT) * Math.min(v, Y_MAX) / Y_MAX; }
   var s = '', i, h = state.hist;
   /* 눈금 — 왼쪽에 수, 아래에 시간 */
-  [0, 4, 8, 12, 16].forEach(function(v){
+  [0, 5, 10, 15, 20].forEach(function(v){
     s += '<line x1="' + X0 + '" y1="' + gy(v) + '" x2="' + X1 + '" y2="' + gy(v) + '" stroke="#E3E6EA" stroke-width="1"/>';
     s += txt('', X0 - 8, gy(v) + 5, String(v), 13, C_SUB, 'end', 400);
   });
@@ -1596,7 +1596,7 @@ var Q_LAC = [
         '유전자 3 부터 거꾸로 하나씩 차례로 전사된다.'],
     a:0,
     no:['',
-        '옳지 않다. 구조유전자 1·2·3 앞에는 프로모터가 하나뿐이다. 유전자마다 프로모터를 따로 가지는 것은 진핵생물이다.',
+        '옳지 않다. 구조유전자 1·2·3 앞에는 프로모터가 하나뿐이다.',
         '옳지 않다. 무대에서 mRNA 는 유전자 1 부터 유전자 3 까지 이어져 있다.',
         '옳지 않다. RNA 중합효소는 프로모터에서 출발해 유전자 1 → 3 쪽으로 나아간다.'],
     ex:'오페론은 하나의 프로모터 아래에 하나의 단위로 전사가 조절되는 유전자 집단이다. ' +
