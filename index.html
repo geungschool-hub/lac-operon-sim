@@ -201,6 +201,20 @@ svg.stage{display:block;width:100%;min-width:560px;height:auto;touch-action:mani
 .chip{font:inherit;font-size:16px;font-weight:700;min-height:44px;padding:8px 14px;border-radius:999px;
       border:2px solid var(--line);background:#fff;color:var(--sub);cursor:pointer;}
 .chip.on{border-color:var(--blue);background:var(--blue);color:#fff;}
+/* ── ① 이름표 · 빈칸 (끌어 놓기 — 2-1 번역 ① 과 같은 손놀림) ── */
+.chiprow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;}
+.chip.nm{border-color:var(--dna);color:var(--dna-ink);touch-action:none;user-select:none;-webkit-user-select:none;}
+.chip.nm.sel{background:var(--dna);color:#fff;}
+.chip.nm:disabled{border-color:#CDD3DB;color:#B0B6BF;background:#F4F6F9;cursor:default;text-decoration:line-through;}
+.dragghost{position:fixed;left:0;top:0;z-index:60;pointer-events:none;transform:translate(-50%,-70%);background:var(--dna);color:#fff;font-weight:800;font-size:16px;padding:8px 14px;border-radius:999px;box-shadow:0 6px 16px rgba(0,0,0,.25);}
+.slotlist{display:flex;flex-direction:column;gap:8px;margin-top:6px;}
+.slotrow{display:flex;align-items:center;gap:10px;border:2px dashed #B8C0CB;border-radius:10px;padding:8px 12px;background:#fff;cursor:pointer;min-height:44px;}
+.slotrow.put{border-style:solid;border-color:var(--green);background:var(--green-bg);}
+.slotrow.last{box-shadow:0 0 0 3px var(--blue);}
+.slotrow .sm{font-weight:800;font-size:17px;color:#5A6270;flex:0 0 auto;}
+.slotrow .sn{flex:0 0 104px;font-weight:800;font-size:16px;color:#9AA1AC;}
+.slotrow.put .sn,.slotrow.put .sm{color:var(--green);}
+.slotrow .sc{flex:1 1 auto;font-size:16px;line-height:1.6;}
 
 /* ── ④ 관찰 기록표 · ⑥ 예측표 ──
    ★칸마다 ○ / ✕ 단추 두 개. 고른 쪽이 채워진다. 맞춰 본 뒤에는 다른 칸에만 표시가 붙는다. */
@@ -350,18 +364,18 @@ html:not(.unlocked) #draftGate{display:flex;}
   <div class="card split" id="cardStruct" data-hub-card="s1">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
       <h2 class="dna" style="flex:1 1 300px;margin-bottom:0;">① 젖당오페론의 구조<span class="yr">교과서 71쪽 그림 Ⅱ-9</span></h2>
-      <span class="tag" id="structProg">확인한 부위 0 / 4</span>
+      <span class="tag" id="structProg">붙인 이름 0 / 4</span>
     </div>
     <div class="panes">
       <div class="pane-l">
         <div class="stage-wrap"><svg class="stage" id="stStage" viewBox="0 120 720 152" xmlns="http://www.w3.org/2000/svg" role="img"
-             aria-label="대장균 DNA 위의 조절유전자와 젖당오페론. 젖당오페론은 프로모터, 작동부위, 구조유전자 1·2·3 으로 이루어진다. 부위를 누르면 하는 일이 나온다."></svg></div>
-        <div class="kindrow" id="partKinds"></div>
+             aria-label="대장균 DNA 위의 네 부위. 이름 칸 ㉠~㉣ 이 비어 있고, 이름표를 끌어 놓으면 이름이 드러난다."></svg></div>
       </div>
       <div class="pane-r">
         <div class="pr-do">
-          <div class="taskbar">DNA 의 부위를 눌러(또는 아래 단추로) <b>네 부위가 하는 일</b>을 차례로 확인하시오.</div>
-          <div class="partbtns" id="partBtns"></div>
+          <div class="taskbar">빈칸 ㉠~㉣ 에 적힌 <b>하는 일</b>을 읽고, 알맞은 이름표를 그림이나 아래 빈칸으로 끌어 놓거나, 이름표를 누른 뒤 빈칸을 누르시오.</div>
+          <div class="chiprow" id="partChips"></div>
+          <div class="slotlist" id="partSlots"></div>
           <div class="infocard" id="partInfo"></div>
           <div class="msg hide" id="fb_struct"></div>
         </div>
@@ -698,8 +712,8 @@ function txt(id, x, y, s, size, fill, anchor, weight){
 function freshHist(){ return [{ L:0, E:0, tx:false, add:0 }]; }
 function freshState(){
   return {
-    partSeen:{},         /* ① 확인한 부위 {reg, prom, op, sg} */
-    partLast:'',         /* ① 마지막으로 누른 부위 */
+    partPut:{},          /* ① 이름을 맞게 붙인 부위 {reg, prom, op, sg} */
+    partLast:'',         /* ① 마지막으로 붙인(누른) 부위 — 설명 카드가 이것을 보인다 */
     nolacSeen:false,     /* ② 마지막 국면까지 봤는가 */
     lacSeen:false,       /* ③ 마지막 국면까지 봤는가 */
     tblPick:{},          /* ④ 'rep_nolac' : 1|2 */
@@ -781,9 +795,9 @@ var STEPS = [
   { key:'mut',    no:'⑥', name:'부위가 고장 나면', sub:'예측 · 확인' }
 ];
 var PARTS = ['reg', 'prom', 'op', 'sg'];
-function partSeenCount(){
+function partPutCount(){
   var n = 0;
-  PARTS.forEach(function(k){ if (state.partSeen[k]) n++; });
+  PARTS.forEach(function(k){ if (state.partPut[k]) n++; });
   return n;
 }
 function tblFilled(){ return Object.keys(state.tblPick).length; }
@@ -805,7 +819,7 @@ function timeCycled(){
   return false;
 }
 function stepDone(k){
-  if (k === 'struct') return partSeenCount() === 4 && answeredOf(Q_STRUCT, state.qPick) === Q_STRUCT.length;
+  if (k === 'struct') return partPutCount() === 4 && answeredOf(Q_STRUCT, state.qPick) === Q_STRUCT.length;
   if (k === 'nolac')  return !!state.nolacSeen && answeredOf(Q_NOLAC, state.qPick) === Q_NOLAC.length;
   if (k === 'lac')    return !!state.lacSeen && answeredOf(Q_LAC, state.qPick) === Q_LAC.length;
   if (k === 'table')  return !!state.tblChecked && tblFilled() === TBL_ROWS.length * 2 && tblAllRight();
@@ -920,6 +934,13 @@ function wavePath(x0, x1, y, amp, step){
   return d;
 }
 
+/* ① 이름 빈칸 — 점선 상자 + ㉠~㉣. 이름을 맞게 붙이면 사라진다(대신 이름이 드러난다) */
+var PART_MARK = { reg:'㉠', prom:'㉡', op:'㉢', sg:'㉣' };
+function slotMarkSvg(pre, part, x0, x1, y){
+  return '<g id="' + pre + '_sl_' + part + '" class="rfade" opacity="1" data-drop="part:' + part + '">' +
+         '<rect x="' + x0 + '" y="' + (y - 16) + '" width="' + (x1 - x0) + '" height="22" rx="6" fill="#fff" stroke="#8A93A0" stroke-width="1.6" stroke-dasharray="4,3"/>' +
+         txt('', (x0 + x1) / 2, y, PART_MARK[part], 14.5, '#5A6270', 'middle', 800) + '</g>';
+}
 /* DNA 그림 — 부위 상자 · 이름 · 묶음 괄호. 움직이지 않는다.
    broken: 고장 난 부위(빗금) · brOp: 괄호 투명도(① 에서는 다 눌러 본 뒤에 드러난다) */
 function dnaSvg(pre, broken, hit){
@@ -948,18 +969,23 @@ function dnaSvg(pre, broken, hit){
     s += '<rect x="' + b.x0 + '" y="' + G.dnaT + '" width="' + (b.x1 - b.x0) + '" height="' + (G.dnaB - G.dnaT) +
          '" rx="5" fill="url(#' + pre + '_broke)" stroke="' + C_INK + '" stroke-width="2.4"/>';
   }
-  /* 부위 이름 */
+  /* 부위 이름 — ★① 에서는 조절유전자·프로모터·작동부위의 이름이 빈칸(㉠~㉢)으로 시작한다. 맞게 붙이면 이름이 드러난다 */
   ['reg', 'prom', 'op', 'g1', 'g2', 'g3'].forEach(function(key){
     var col = (key === 'reg') ? C_REP_INK : C_DNA_INK;
-    s += txt('', segMid(key), G.labY, SEG[key].name, 13.5, col, 'middle', 700);
+    var slot = hit && PART_MARK[key];
+    s += txt(slot ? pre + '_nm_' + key : '', segMid(key), G.labY, SEG[key].name, 13.5, col, 'middle', 700).replace('<text', slot ? '<text class="rfade" opacity="0"' : '<text');
+    if (slot) s += slotMarkSvg(pre, key, SEG[key].x0 + 4, SEG[key].x1 - 4, G.labY);
   });
   /* 묶음 괄호 — 구조유전자(유전자 1~3) · 젖당오페론(프로모터~유전자 3) */
-  s += '<g id="' + pre + '_br">';
+  s += '<g id="' + pre + '_br"><g id="' + pre + '_brsg"' + (hit ? ' class="rfade" opacity="0"' : '') + '>';
   s += '<path d="M' + SEG.g1.x0 + ',' + (G.sgBrY - 6) + ' V' + G.sgBrY + ' H' + SEG.g3.x1 + ' V' + (G.sgBrY - 6) + '" fill="none" stroke="' + C_DNA_INK + '" stroke-width="1.6"/>';
   s += txt('', (SEG.g1.x0 + SEG.g3.x1) / 2, G.sgBrY + 15, '구조유전자', 13.5, C_DNA_INK, 'middle', 700);
+  s += '</g><g id="' + pre + '_brop"' + (hit ? ' class="rfade" opacity="0"' : '') + '>';
   s += '<path d="M' + SEG.prom.x0 + ',' + (G.opBrY - 6) + ' V' + G.opBrY + ' H' + SEG.g3.x1 + ' V' + (G.opBrY - 6) + '" fill="none" stroke="' + C_INK + '" stroke-width="1.8"/>';
   s += txt('', (SEG.prom.x0 + SEG.g3.x1) / 2, G.opBrY + 16, '젖당오페론', 14.5, C_INK, 'middle', 800);
-  s += '</g>';
+  s += '</g></g>';
+  /* ㉣ 구조유전자의 빈칸 — 「구조유전자」 괄호 이름 자리 */
+  if (hit) s += slotMarkSvg(pre, 'sg', SEG.g2.x0 + 6, SEG.g2.x1 - 6, G.sgBrY + 15);
   /* ① 에서만 — 누르는 자리와 고른 부위 테두리 */
   if (hit){
     [['reg', 'reg'], ['prom', 'prom'], ['op', 'op'], ['g1', 'sg'], ['g2', 'sg'], ['g3', 'sg']].forEach(function(p){
@@ -970,7 +996,7 @@ function dnaSvg(pre, broken, hit){
     [['reg', 'reg'], ['prom', 'prom'], ['op', 'op'], ['g1', 'sg'], ['g2', 'sg'], ['g3', 'sg']].forEach(function(p){
       var g = SEG[p[0]];
       s += '<rect class="seghit" x="' + g.x0 + '" y="' + (G.dnaT - 30) + '" width="' + (g.x1 - g.x0) + '" height="' + (G.labY - G.dnaT + 40) +
-           '" fill="#fff" fill-opacity="0" onclick="pickPart(&#39;' + p[1] + '&#39;)"/>';
+           '" fill="#fff" fill-opacity="0" data-drop="part:' + p[1] + '" onclick="dropPart(&#39;' + p[1] + '&#39;)"/>';
     });
   }
   return s;
@@ -1225,51 +1251,168 @@ var PART_INFO = {
          body:'젖당 이용에 관련된 <b>단백질 정보를 암호화</b>하고 있는 부위이다(유전자 1·2·3). ' +
               '젖당을 세포 안으로 수송하는 단백질과 젖당을 분해하는 효소의 유전자가 한 부위에 모여 있어 <b>전사가 한꺼번에</b> 일어나고 함께 발현이 조절된다.' }
 };
-var stMounted = false;
-function pickPart(k){
+/* 빈칸의 단서 — 위 PART_INFO 의 첫 문장(교과서 옆단)에서 이름만 뺀 것 */
+var PART_CLUE = {
+  reg: '작동부위에 결합하는 억제단백질의 유전자로, 오페론 앞의 다른 부위에 있다.',
+  prom:'RNA 중합효소가 결합해 전사가 시작되는 부위이다.',
+  op:  '억제단백질이 결합하는 부위로, 전사를 조절하는 스위치 역할을 한다.',
+  sg:  '젖당 이용에 관련된 단백질 정보를 암호화하고 있는 부위이다(유전자 1·2·3).'
+};
+/* 이름표 — 네 부위 + 미끼 둘. ★미끼는 DNA 의 부위가 아니라 단백질이다(「억제단백질도 DNA 의 한 부분」이라는 혼동을 거른다) */
+var NAME_CHIPS = ['작동부위', '억제단백질', '구조유전자', '조절유전자', 'RNA 중합효소', '프로모터'];
+var NAME_ROLE = {
+  '조절유전자': '조절유전자는 억제단백질의 유전자로, 오페론 앞의 다른 부위에 있다.',
+  '프로모터':   '프로모터는 RNA 중합효소가 결합하는 부위이다.',
+  '작동부위':   '작동부위는 억제단백질이 결합하는 부위이다.',
+  '구조유전자': '구조유전자는 젖당 이용에 관련된 단백질 정보를 암호화하는 부위이다.',
+  '억제단백질': '억제단백질은 DNA 의 부위가 아니라 조절유전자에서 만들어지는 단백질이다.',
+  'RNA 중합효소':'RNA 중합효소는 DNA 의 부위가 아니라 프로모터에 결합해 전사를 하는 효소이다.'
+};
+function partOfName(nm){
+  var hit = '';
+  PARTS.forEach(function(k){ if (PART_INFO[k].name === nm) hit = k; });
+  return hit;
+}
+var ptSel = '';   /* 고른 이름표(화면에만) */
+function pickName(nm){
+  if (NAME_CHIPS.indexOf(nm) < 0) return;
+  ptSel = (ptSel === nm) ? '' : nm;
+  showFb('fb_struct', '', '');
+  renderStruct();
+}
+/* 빈칸에 놓기 — 그림의 부위나 오른쪽 빈칸을 눌러도, 끌어다 놓아도 여기로 온다 */
+function dropPart(k){
   if (!PART_INFO[k]) return;
-  state.partSeen[k] = true;
+  if (state.partPut[k] || !ptSel){
+    if (state.partPut[k]){ state.partLast = k; ptSel = ''; saveState(); renderStruct(); return; }
+    showFb('fb_struct', 'warn', '먼저 붙일 이름표를 하나 고르시오.');
+    return;
+  }
+  var nm = ptSel;
+  ptSel = '';
+  if (partOfName(nm) !== k){
+    showFb('fb_struct', 'bad', '옳지 않다. ' + PART_MARK[k] + ' 은 「' + nm + '」 자리가 아니다. ' + NAME_ROLE[nm]);
+    renderStruct();
+    return;
+  }
+  putPart(k);
+  if (partPutCount() < 4) showFb('fb_struct', 'good', '✅ ' + PART_MARK[k] + ' — ' + PART_INFO[k].name + '.');
+}
+function putPart(k){
+  if (!PART_INFO[k]) return;
+  state.partPut[k] = true;
   state.partLast = k;
   saveState();
   renderStruct();
   updateAll();
 }
+
+/* ── 끌어 놓기 (2-1 번역 ① 에서 옮겼다) ──
+   ★누르기로 놓기(고르고 → 자리 누르기)도 그대로 된다 — 끌기가 안 되는 기기를 위해서다.
+   ★포인터 이벤트 하나로 마우스·손가락을 함께 받는다. 8px 넘게 움직여야 「끌기」로 본다(그 밖은 누르기).
+   ★놓을 자리는 data-drop="part:reg" 로 표시한다. 손가락 밑 요소에서 위로 올라가며 찾는다. */
+var drag = null, dragClicked = '';
+function dragAttrs(val){
+  var a = '&#39;' + val + '&#39;';
+  return ' onpointerdown="dragDown(event, ' + a + ')" onpointermove="dragMove(event)" onpointerup="dragUp(event)" onpointercancel="dragCancel()"';
+}
+function dragDown(ev, val){
+  if (ev.button !== undefined && ev.button !== 0) return;
+  var t = ev.currentTarget;
+  if (t && t.disabled) return;
+  dragClicked = '';   /* ★새로 누를 때마다 지운다 — 끌기 뒤 click 이 안 오면 다음 누르기가 먹힌다 */
+  drag = { val:val, x0:ev.clientX, y0:ev.clientY, moved:false, ghost:null };
+  try { if (t && t.setPointerCapture) t.setPointerCapture(ev.pointerId); } catch (e) {}
+}
+function dragMove(ev){
+  if (!drag) return;
+  var dx = ev.clientX - drag.x0, dy = ev.clientY - drag.y0;
+  if (!drag.moved){
+    if (dx * dx + dy * dy < 64) return;
+    drag.moved = true;
+    var g = document.createElement('div');
+    g.className = 'dragghost';
+    g.textContent = drag.val;
+    if (document.body) document.body.appendChild(g);
+    drag.ghost = g;
+  }
+  if (drag.ghost){ drag.ghost.style.left = ev.clientX + 'px'; drag.ghost.style.top = ev.clientY + 'px'; }
+  if (ev.preventDefault) ev.preventDefault();
+}
+function dropTargetAt(x, y){
+  var el = (document.elementFromPoint ? document.elementFromPoint(x, y) : null), n = 0;
+  while (el && n++ < 8){
+    var d = el.getAttribute ? el.getAttribute('data-drop') : null;
+    if (d) return d;
+    el = el.parentNode;
+  }
+  return '';
+}
+function dragUp(ev){
+  if (!drag) return;
+  var d = drag; drag = null;
+  if (d.ghost && d.ghost.parentNode) d.ghost.parentNode.removeChild(d.ghost);
+  if (!d.moved) return;                    /* 누르기 — onclick(dragClick)이 맡는다 */
+  dragClicked = d.val;                     /* 끌고 난 뒤 따라오는 click 은 한 번 버린다 */
+  var tgt = dropTargetAt(ev.clientX, ev.clientY);
+  ptSel = d.val;
+  if (tgt.indexOf('part:') === 0) dropPart(tgt.slice(5));
+  else { ptSel = ''; renderStruct(); }
+}
+function dragCancel(){
+  if (drag && drag.ghost && drag.ghost.parentNode) drag.ghost.parentNode.removeChild(drag.ghost);
+  drag = null;
+}
+function dragClick(val){
+  if (dragClicked === val){ dragClicked = ''; return; }
+  dragClicked = '';
+  pickName(val);
+}
+
+var stMounted = false;
 function renderStruct(){
   var host = document.getElementById('stStage');
   if (host && !stMounted){ host.innerHTML = dnaSvg('st', '', true); stMounted = true; }
-  var all = (partSeenCount() === 4);
-  /* ★묶음 괄호는 네 부위를 다 본 뒤에 드러난다 — 「무엇이 오페론에 들어가는가」가 이 칸의 결론이다 */
-  fadeTo('st_br', all ? 1 : 0.12);
+  var all = (partPutCount() === 4);
+  /* ★「젖당오페론」 괄호는 네 이름을 다 붙인 뒤에 드러난다 — 「무엇이 오페론에 들어가는가」가 이 칸의 결론이다 */
+  PARTS.forEach(function(k){
+    fadeTo('st_sl_' + k, state.partPut[k] ? 0 : 1);
+    if (k !== 'sg') fadeTo('st_nm_' + k, state.partPut[k] ? 1 : 0);
+  });
+  fadeTo('st_brsg', state.partPut.sg ? 1 : 0);
+  fadeTo('st_brop', all ? 1 : 0);
   ['reg', 'prom', 'op', 'g1', 'g2', 'g3'].forEach(function(key){
     var part = /^g/.test(key) ? 'sg' : key;
     fadeTo('st_hl_' + key, state.partLast === part ? 1 : 0);
   });
-  var bh = '';
-  PARTS.forEach(function(k){
-    var on = (state.partLast === k);
-    bh += '<button type="button" class="btn ' + (k === 'reg' ? 'rep' : 'teal') + (on ? '' : ' ghost') + ' sm" onclick="pickPart(&#39;' + k + '&#39;)">' +
-          PART_INFO[k].name + '</button>';
+  var ch = '';
+  NAME_CHIPS.forEach(function(nm){
+    var k = partOfName(nm), used = !!(k && state.partPut[k]);
+    ch += '<button type="button" class="chip nm' + (ptSel === nm ? ' sel' : '') + '"' + (used ? ' disabled' : '') +
+          dragAttrs(nm) + ' onclick="dragClick(&#39;' + nm + '&#39;)">' + nm + '</button>';
   });
-  setHTML('partBtns', bh);
-  var kh = '';
+  setHTML('partChips', ch);
+  var sh = '';
   PARTS.forEach(function(k){
-    kh += '<span class="kind' + (state.partSeen[k] ? ' seen' : '') + '">' + (state.partSeen[k] ? '✓ ' : '') + PART_INFO[k].name + '</span>';
+    var put = !!state.partPut[k];
+    sh += '<div class="slotrow' + (put ? ' put' : '') + (state.partLast === k ? ' last' : '') + '" data-drop="part:' + k + '" onclick="dropPart(&#39;' + k + '&#39;)">' +
+          '<span class="sm">' + PART_MARK[k] + '</span><span class="sn">' + (put ? '✓ ' + PART_INFO[k].name : '(&nbsp;&nbsp;&nbsp;&nbsp;)') + '</span>' +
+          '<span class="sc">' + PART_CLUE[k] + '</span></div>';
   });
-  setHTML('partKinds', kh);
+  setHTML('partSlots', sh);
   var I = PART_INFO[state.partLast];
   var card = document.getElementById('partInfo');
   if (card){
     card.className = 'infocard' + (I ? ' ' + I.cls : '');
     card.innerHTML = I ? '<div class="ih">' + I.name + '</div><div class="ib">' + I.body + '</div>'
-                       : '<div class="ib" style="color:#8A93A0;">부위를 누르면 그 부위가 하는 일이 여기에 나온다.</div>';
+                       : '<div class="ib" style="color:#8A93A0;">이름을 맞게 붙이면 그 부위의 설명이 여기에 나온다.</div>';
   }
   var pg = document.getElementById('structProg');
-  if (pg) pg.textContent = '확인한 부위 ' + partSeenCount() + ' / 4';
+  if (pg) pg.textContent = '붙인 이름 ' + partPutCount() + ' / 4';
   if (all){
-    showFb('fb_struct', 'good', '✅ 네 부위를 모두 확인하였다. 원핵생물에서 <b>하나의 프로모터 아래에 하나의 단위로 전사가 조절되는 유전자 집단</b>을 오페론이라고 한다. ' +
-           '젖당오페론은 <b>프로모터 · 작동부위 · 구조유전자</b>로 구성된다. 조절유전자는 오페론 앞의 다른 부위에 있다 — 무대의 괄호를 보시오.');
-  } else {
-    showFb('fb_struct', '', '');
+    showFb('fb_struct', 'good', '✅ 네 부위에 이름을 모두 붙였다. 원핵생물에서 <b>하나의 프로모터 아래에 하나의 단위로 전사가 조절되는 유전자 집단</b>을 오페론이라고 한다. ' +
+           '젖당오페론은 <b>프로모터 · 작동부위 · 구조유전자</b>로 구성된다. 조절유전자는 오페론 앞의 다른 부위에 있다 — 무대의 괄호를 보시오. ' +
+           '억제단백질과 RNA 중합효소는 DNA 의 부위가 아니라 단백질이므로 이름표가 남는다.');
   }
 }
 
@@ -1953,8 +2096,8 @@ function unlockDraft(){
    ★새로고침하지 않는다(resetAll 과 다른 점) — 다른 칸의 답이 살아 있어야 한다.
    ★확인 대화상자는 잃을 것이 큰 칸에만 — 손으로 채운 ④ · 손으로 적은 ⑦. */
 var SEC_DEF = {
-  struct: { qs:function(){ return Q_STRUCT; }, ask:false, fb:'fb_struct', msg:'① 에서 확인한 부위와 문항을 지웠다.',
-            run:function(){ state.partSeen = {}; state.partLast = ''; } },
+  struct: { qs:function(){ return Q_STRUCT; }, ask:false, fb:'fb_struct', msg:'① 에서 붙인 이름과 문항을 지웠다.',
+            run:function(){ state.partPut = {}; state.partLast = ''; ptSel = ''; } },
   nolac:  { qs:function(){ return Q_NOLAC; },  ask:false, fb:'fb_nolac',  msg:'② 를 처음 국면으로 되돌리고 문항을 지웠다.',
             run:function(){ state.nolacSeen = false; STG.na.ph = 0; } },
   lac:    { qs:function(){ return Q_LAC; },    ask:false, fb:'fb_lac',    msg:'③ 을 처음 국면으로 되돌리고 문항을 지웠다.',
@@ -2092,14 +2235,14 @@ function init(){
       }
     });
   }
-  ['partSeen', 'tblPick', 'mutPick', 'qPick', 'pPick', 'ta', 'self'].forEach(function(k){
+  ['partPut', 'tblPick', 'mutPick', 'qPick', 'pPick', 'ta', 'self'].forEach(function(k){
     if (!state[k] || typeof state[k] !== 'object' || Array.isArray(state[k])) state[k] = {};
   });
   /* ★범위 밖의 값·없는 이름은 걸러 낸다 — 저장분이 망가져도 화면이 비지 않게 한다 */
-  Object.keys(state.partSeen).forEach(function(k){
-    if (PARTS.indexOf(k) < 0 || state.partSeen[k] !== true) delete state.partSeen[k];
+  Object.keys(state.partPut).forEach(function(k){
+    if (PARTS.indexOf(k) < 0 || state.partPut[k] !== true) delete state.partPut[k];
   });
-  if (!state.partSeen[state.partLast]) state.partLast = '';
+  if (!state.partPut[state.partLast]) state.partLast = '';
   state.nolacSeen = !!state.nolacSeen;
   state.lacSeen = !!state.lacSeen;
   var tk = [], mk = [];
