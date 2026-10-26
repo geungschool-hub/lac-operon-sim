@@ -10,7 +10,7 @@
    ★이 스크립트는 head 에 있어야 한다 — 본문보다 먼저 돌아야 잠긴 화면이 깜빡이지 않는다.
    ★기본이 「잠김」이다(fail-closed). 조건이 맞을 때만 .unlocked 가 붙는다.
    ⚠ 이것은 잠금이지 보안이 아니다. 공개 저장소라 소스를 보면 비밀번호가 보인다. */
-var DRAFT_MODE = true;                     /* ◀ 완성되면 false 로 바꿔 재배포 */
+var DRAFT_MODE = false;                    /* ◀ 2026-10-26 교사 지시로 학생에게 열었다 */
 var DRAFT_PASS = '7856';                   /* ★교사 지정. 모든 활동이 같은 값을 쓴다 */
 var DRAFT_KEY  = 'lac_sim_draft_ok';       /* ★활동마다 다른 이름 — 허브가 한 origin 이다 */
 try {
@@ -375,7 +375,7 @@ html:not(.unlocked) #draftGate{display:flex;}
   <div class="card split" id="cardNolac" data-hub-card="s2">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
       <h2 class="rep" style="flex:1 1 300px;margin-bottom:0;">② 젖당이 없을 때<span class="yr">교과서 72쪽 그림 Ⅱ-10</span></h2>
-      <span class="tag" id="naProg">본 국면 1 / 4</span>
+      <span class="tag" id="naProg">본 국면 1 / 5</span>
     </div>
     <div class="panes">
       <div class="pane-l">
@@ -414,7 +414,7 @@ html:not(.unlocked) #draftGate{display:flex;}
   <div class="card split" id="cardLac" data-hub-card="s3">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
       <h2 class="lac" style="flex:1 1 300px;margin-bottom:0;">③ 젖당이 있을 때<span class="yr">교과서 72쪽 그림 Ⅱ-10</span></h2>
-      <span class="tag" id="laProg">본 국면 1 / 8</span>
+      <span class="tag" id="laProg">본 국면 1 / 9</span>
     </div>
     <div class="panes">
       <div class="pane-l">
@@ -836,7 +836,7 @@ var G = {
   dnaT:156, dnaB:184,                 /* 부위 상자의 위·아래 */
   labY:205,                           /* 부위 이름 (움직이지 않는다) */
   sgBrY:218, opBrY:244,               /* 「구조유전자」 · 「젖당오페론」 묶음 괄호 */
-  mrnaY:290, enzY:318, rmY:236
+  mrnaY:290, enzY:318, rmY:134
 };
 var SEG = {
   reg: { x0:24,  x1:134, name:'조절유전자' },
@@ -850,7 +850,8 @@ function segMid(k){ return (SEG[k].x0 + SEG[k].x1) / 2; }
 
 /* 물체가 머무는 자리 */
 var POS = {
-  repFree:{ x:80,  y:92 },     /* 조절유전자 위 — 갓 만들어진 억제단백질 */
+  repBorn:{ x:80,  y:128 },    /* 조절유전자의 mRNA 자리 — 여기서 떠오른다 */
+  repFree:{ x:80,  y:84 },     /* 조절유전자 위 — 갓 만들어진 억제단백질 */
   repHover:{ x:302, y:100 },   /* 작동부위 위에 떠 있다 — 결합하지 못한다 */
   repBound:{ x:290, y:143 },   /* 작동부위에 결합 */
   polFloat:{ x:212, y:70 },
@@ -981,9 +982,10 @@ function dnaSvg(pre, broken, hit){
 var NUMS = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧'];
 function lacPhases(cond, strain){
   var F = lacFacts(cond, strain), lac = (cond === 'lac');
-  var cur = { rep:'none', form:'n', ind:'none', pol:'float', mrna:false, enz:false, rm:false };
+  var cur = { rep:'none', form:'n', ind:'none', pol:'float', mrna:false, enz:false, rm:false, rgl:false };
   var out = [], n = 0;
   function push(name, cap, ch){
+    cur.rgl = false;     /* ★조절유전자 강조는 그 국면에만 — 다음 국면으로 넘기지 않는다 */
     Object.keys(ch || {}).forEach(function(k){ cur[k] = ch[k]; });
     var o = {};
     Object.keys(cur).forEach(function(k){ o[k] = cur[k]; });
@@ -995,12 +997,18 @@ function lacPhases(cond, strain){
        lac ? '대장균 안에 <b>젖당이 있다</b>(속이 빈 육각형 두 개가 젖당 한 분자이다). DNA 에는 조절유전자와 젖당오페론이 있고, 세포 안에 RNA 중합효소가 있다.'
            : '대장균 안에 <b>젖당이 없다</b>. DNA 에는 조절유전자와 젖당오페론이 있고, 세포 안에 RNA 중합효소가 있다.', {});
   if (F.repMade){
-    push('조절유전자가 발현되어 억제단백질이 만들어진다',
-         '조절유전자가 발현되어 <b>억제단백질</b>이 만들어진다. 억제단백질은 <b>젖당의 유무와 상관없이</b> 조절유전자에서 항상 만들어진다.',
-         { rep:'free', rm:true });
+    /* ★한 국면에 한 사건 — 전사(mRNA 가 자란다)와 번역(억제단백질이 떠오른다)을 가른다.
+         한 국면에 몰았더니 억제단백질이 「어디에서」 오는지 보이지 않았다(교사 지적 2026-10-26). */
+    push('조절유전자가 전사되어 mRNA 가 만들어진다',
+         '갈색 테두리의 <b>조절유전자</b>가 전사된다. 조절유전자 바로 위에서 <b>mRNA</b> 가 자라 나오는 것을 보시오.',
+         { rm:true, rgl:true });
+    push('조절유전자의 mRNA 가 번역되어 억제단백질이 만들어진다',
+         '조절유전자의 mRNA 가 번역되어 <b>억제단백질</b>이 만들어진다 — mRNA 자리에서 떠오른다. ' +
+         '억제단백질은 <b>젖당의 유무와 상관없이</b> 조절유전자에서 항상 만들어진다.',
+         { rep:'free', rgl:true });
   } else {
     push('조절유전자가 고장 나 억제단백질이 만들어지지 않는다',
-         '조절유전자가 고장 나 작동부위에 결합할 <b>억제단백질이 만들어지지 않는다</b>.', {});
+         '빗금 친 <b>조절유전자</b>가 고장 나 작동부위에 결합할 <b>억제단백질이 만들어지지 않는다</b>.', { rgl:true });
   }
   if (F.indMade){
     push('젖당에서 젖당 유도체가 만들어진다',
@@ -1054,7 +1062,9 @@ function lacLayout(cond, strain, ph, opt){
   var p = Math.max(0, Math.min(P.length - 1, Math.round(Number(ph) || 0)));
   var S = P[p], lac = (cond === 'lac');
   var o = { ph:p, last:P.length - 1, step:S.name, cap:S.cap, snap:S };
-  var rp = (S.rep === 'bound') ? POS.repBound : (S.rep === 'hover') ? POS.repHover : POS.repFree;
+  /* ★아직 없는 억제단백질은 조절유전자의 mRNA 자리에 투명하게 둔다 — 만들어질 때 거기서 떠오른다 */
+  var rp = (S.rep === 'bound') ? POS.repBound : (S.rep === 'hover') ? POS.repHover :
+           (S.rep === 'free') ? POS.repFree : POS.repBorn;
   o.rep = { x:rp.x, y:rp.y, op:(S.rep === 'none' ? 0 : 1), form:S.form };
   if (S.ind === 'onrep') o.ind = { x:rp.x + POS.indOnRep.dx, y:rp.y + POS.indOnRep.dy, op:1 };
   else o.ind = { x:LAC_SPOTS[0].x, y:LAC_SPOTS[0].y, op:(S.ind === 'formed' ? 1 : 0) };
@@ -1065,9 +1075,11 @@ function lacLayout(cond, strain, ph, opt){
   var pp = (S.pol === 'blocked') ? POS.polBlocked : (S.pol === 'bound') ? POS.polBound : (S.pol === 'end') ? POS.polEnd : POS.polFloat;
   o.pol = { x:pp.x, y:pp.y, op:1, xop:(S.pol === 'blocked' ? 1 : 0) };
   o.mrna = { op:(S.mrna ? 1 : 0), off:(S.mrna ? 0 : 100) };
-  o.rm = { op:(S.rm ? 1 : 0) };
+  o.rm = { op:(S.rm ? 1 : 0), off:(S.rm ? 0 : 100) };
+  o.rgl = { op:(S.rgl ? 1 : 0) };
   var showEnz = S.enz && !(opt && opt.noProducts);
-  o.enz = ENZ_X.map(function(x){ return { x:x, y:G.enzY, op:(showEnz ? 1 : 0) }; });
+  /* ★아직 없는 효소는 mRNA 위에 투명하게 둔다 — 번역되면 mRNA 에서 내려오며 나타난다 */
+  o.enz = ENZ_X.map(function(x){ return { x:x, y:(showEnz ? G.enzY : G.mrnaY), op:(showEnz ? 1 : 0) }; });
   return o;
 }
 
@@ -1077,9 +1089,12 @@ function lacStageSvg(pre, strain){
   s += '<rect x="5" y="5" width="710" height="340" rx="34" fill="none" stroke="#C8CDD4" stroke-width="2" stroke-dasharray="8,6"/>';
   s += txt('', 30, 34, '대장균 세포 안', 13.5, '#8A93A0', 'start', 700);
   s += dnaSvg(pre, (strain === 'normal' ? '' : strain), false);
-  /* 조절유전자의 mRNA — 억제단백질이 만들어지는 길 */
-  s += '<path id="' + pre + '_rm" class="rfade" d="' + wavePath(SEG.reg.x0 + 8, SEG.reg.x1 - 8, G.rmY, 5, 12) +
-       '" fill="none" stroke="' + C_RNA + '" stroke-width="3" opacity="0"/>';
+  /* 조절유전자가 발현되는 동안 그 부위를 테두리로 짚는다 — 「어디에서」 만들어지는가가 이 국면의 몫이다 */
+  s += '<rect id="' + pre + '_rgl" class="rfade" x="' + (SEG.reg.x0 - 6) + '" y="' + (G.dnaT - 6) + '" width="' + (SEG.reg.x1 - SEG.reg.x0 + 12) +
+       '" height="' + (G.dnaB - G.dnaT + 12) + '" rx="9" fill="' + C_REP + '" fill-opacity=".18" stroke="' + C_REP + '" stroke-width="3.5" opacity="0"/>';
+  /* 조절유전자의 mRNA — 유전자 바로 위에서 왼쪽부터 자라난다(억제단백질이 만들어지는 길) */
+  s += '<path id="' + pre + '_rm" class="mgrow" d="' + wavePath(SEG.reg.x0 + 6, SEG.reg.x1 - 6, G.rmY, 5, 12) +
+       '" fill="none" stroke="' + C_RNA + '" stroke-width="3.4" pathLength="100" stroke-dasharray="100" style="stroke-dashoffset:100" opacity="0"/>';
   /* 구조유전자의 mRNA — 하나로 이어진 한 가닥 */
   s += '<path id="' + pre + '_mrna" class="mgrow" d="' + wavePath(SEG.g1.x0 + 4, SEG.g3.x1 - 4, G.mrnaY, 6, 14) +
        '" fill="none" stroke="' + C_RNA + '" stroke-width="3.4" pathLength="100" stroke-dasharray="100" style="stroke-dashoffset:100" opacity="0"/>';
@@ -1107,7 +1122,12 @@ function lacApply(pre, L){
   for (i = 0; i < L.lac.length; i++) putAt(pre + '_lac' + i, L.lac[i].x, L.lac[i].y, L.lac[i].op);
   putAt(pre + '_pol', L.pol.x, L.pol.y, L.pol.op);
   fadeTo(pre + '_polx', L.pol.xop);
-  fadeTo(pre + '_rm', L.rm.op);
+  fadeTo(pre + '_rgl', L.rgl.op);
+  var rm = document.getElementById(pre + '_rm');
+  if (rm){
+    rm.setAttribute('opacity', String(L.rm.op));
+    if (rm.style) rm.style.strokeDashoffset = String(L.rm.off);
+  }
   var m = document.getElementById(pre + '_mrna');
   if (m){
     m.setAttribute('opacity', String(L.mrna.op));
