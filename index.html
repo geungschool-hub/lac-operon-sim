@@ -242,7 +242,22 @@ svg.stage{display:block;width:100%;min-width:560px;height:auto;touch-action:mani
 .tmstat .st.enz .sv{color:var(--ink);}
 .tmstat .st.tx{border-color:var(--rna);} .tmstat .st.tx .sv{color:var(--rna-ink);}
 .tmstat .st.tx.off{border-color:var(--line);} .tmstat .st.tx.off .sv{color:#98A0AC;}
-.assume{font-size:14.5px;color:var(--sub);margin-top:10px;line-height:1.7;border:1px dashed #C8CDD4;border-radius:9px;padding:8px 12px;background:#fff;}
+.tmread{margin-top:16px;border-top:1px solid var(--line);padding-top:14px;}
+.tmread h3{font-size:18px;margin:0 0 10px;color:var(--rna-ink);}
+.rdgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px;}
+.rd{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#FCFDFE;font-size:16px;line-height:1.75;}
+.rd h4{margin:0 0 6px;font-size:16.5px;}
+.rd.real{margin-top:12px;}
+.realgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:12px;align-items:start;}
+.realpts{margin:0;padding-left:20px;}
+.realpts li{margin-bottom:6px;}
+.rd .src{font-size:14px;color:var(--sub);margin-top:8px;}
+.runs{margin-top:10px;overflow-x:auto;}
+.runs table{border-collapse:collapse;font-size:15px;min-width:100%;}
+.runs th,.runs td{border:1px solid var(--line);padding:5px 8px;text-align:center;}
+.runs th{background:#F4F6F9;font-weight:700;}
+.runs .none{color:var(--sub);font-size:15px;}
+.assume{font-size:16px;color:var(--sub);margin-top:10px;line-height:1.7;border:1px dashed #C8CDD4;border-radius:9px;padding:8px 12px;background:#fff;}
 
 /* ── 선택형 ── */
 .choices{display:flex;flex-direction:column;gap:9px;margin-top:10px;}
@@ -500,8 +515,8 @@ html:not(.unlocked) #draftGate{display:flex;}
     </div>
     <div class="panes">
       <div class="pane-l">
-        <div class="stage-wrap"><svg class="stage" id="tmGraph" viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg" role="img"
-             aria-label="시간에 따른 젖당 수와 효소 수, 그리고 전사가 일어난 시간을 나타낸 그래프"></svg></div>
+        <div class="stage-wrap"><svg class="stage" id="tmGraph" viewBox="0 0 700 428" xmlns="http://www.w3.org/2000/svg" role="img"
+             aria-label="시간 축을 함께 쓰는 네 칸 그래프 — 위에서부터 전사가 일어난 칸, 있는 효소 수, 그 칸에 분해된 젖당 수, 남은 젖당 수"></svg></div>
         <ul class="slg" id="tm_glg"></ul>
         <div class="stage-wrap" style="margin-top:10px;"><svg class="stage" id="tmStage" viewBox="0 0 720 350" xmlns="http://www.w3.org/2000/svg" role="img"
              aria-label="지금 이 순간 젖당오페론의 모습 — 젖당이 남아 있는지에 따라 억제단백질이 작동부위에 붙거나 떨어진다"></svg></div>
@@ -515,11 +530,45 @@ html:not(.unlocked) #draftGate{display:flex;}
             <button type="button" class="btn rna ghost" id="btnTick5" onclick="tick(5)">⏩ 5칸</button>
           </div>
           <div class="tmstat" id="tmStat"></div>
-          <div class="assume">📌 <b>이 모형의 규칙</b> — 시간 1칸마다 ① 젖당이 남아 있으면 젖당 유도체가 생겨 억제단백질이 작동부위에서 떨어지고, 전사·번역이 일어나 효소가 <b>한 벌</b> 만들어진다.
-            ② 효소 한 벌은 젖당을 <b>1개</b>씩 분해한다.<br>★이 모형에서는 만들어진 효소가 <b>사라지지 않는다</b>고 가정한다(교과서에 없는 단순화이다).</div>
+          <div class="assume">📌 <b>이 모형의 규칙</b> — 시간 1칸마다 ① → ② 차례로 일어난다.<br>
+            ① 젖당이 남아 있으면 젖당 유도체가 생겨 억제단백질이 작동부위에서 떨어지고, 전사·번역이 일어나 효소가 <b>한 벌</b> 만들어진다.<br>
+            ② 방금 만들어진 것까지 모든 효소가 일한다. 효소 한 벌은 젖당을 <b>1개</b>씩 분해한다. 남은 젖당이 효소보다 적으면 남은 만큼만 분해된다.<br>
+            ★만들어진 효소는 <b>사라지지 않는다</b>고 가정한다(단순화이다 — 아래 「실제 대장균에서는」).</div>
           <div class="msg hide" id="fb_time"></div>
         </div>
         <div class="pr-q"><div id="timeQ"></div></div>
+      </div>
+    </div>
+    <div class="tmread">
+      <h3>🔎 그래프를 엄밀하게 읽기</h3>
+      <div class="rdgrid">
+        <div class="rd">
+          <h4>㉮ 젖당이 점점 빨리 줄어드는 까닭</h4>
+          한 칸에 분해되는 젖당 수(㉢)는 그 칸에 있는 효소 수(㉡)와 같다. 젖당이 남아 있는 동안 전사가 계속되어 효소가 1벌씩 쌓이므로,
+          분해되는 수가 1 → 2 → 3 … 으로 커진다. 그래서 ㉣ 의 젖당은 처음에는 천천히, 나중에는 빠르게 줄어든다.<br>
+          단, 남은 젖당이 효소 수보다 적은 마지막 칸에서는 남은 만큼만 분해된다(㉢ 의 점선 = 효소가 더 분해할 수 있었던 몫).
+        </div>
+        <div class="rd">
+          <h4>㉯ 「효소가 사라지지 않는다」는 가정이 만드는 일</h4>
+          ① 젖당이 다 쓰여 전사가 멈춘 뒤에도 효소 수가 그대로 남는다(㉡ 이 평평해진다).<br>
+          ② 그래서 젖당을 <b>다시 넣으면</b> 새 효소를 기다리지 않고 남아 있던 효소가 곧바로 분해한다. 처음보다 훨씬 빨리 다 쓰인다.<br>
+          ③ 젖당을 넣을 때마다 효소는 쌓이기만 하고 줄지 않는다.
+          <div class="runs" id="tmRuns"></div>
+        </div>
+      </div>
+      <div class="rd real">
+        <h4>㉰ 실제 대장균에서는 — 모노(J. Monod)의 실험</h4>
+        <div class="realgrid">
+          <div class="stage-wrap"><svg class="stage" id="tmReal" viewBox="0 0 560 318" xmlns="http://www.w3.org/2000/svg" role="img"
+               aria-label="모노의 실험 결과를 다시 그린 그래프 — 유도물질을 넣자 젖당 분해효소가 일정하게 늘고, 유도물질을 없애자 더 늘지 않고 그대로 유지된다"></svg></div>
+          <ul class="realpts">
+            <li>유도물질을 넣자 젖당 분해효소(β-갈락토시데이스)가 <b>일정한 빠르기</b>로 늘었고, 유도물질을 없애자 <b>곧바로 더 늘지 않았다</b>. 효소가 줄지도 않았다 — 모노는 이 효소가 세포 안에서 분해되지 않고 <b>안정하다</b>는 것을 밝혔다. ㉡ 과 모양을 비교하시오.</li>
+            <li>유도물질을 없애자 효소를 만드는 일이 곧 멈춘 것은 이 모형과 같다. 원핵생물의 mRNA 는 몇 분 안에 분해되므로 전사가 멈추면 번역도 곧 멈춘다.</li>
+            <li>다른 점 ① — 가로축이 시간이 아니라 <b>세균 단백질의 양</b>(세균이 자란 정도)이다. 세균은 자라면서 분열한다. 효소를 더 만들지 않으면 효소의 총량은 그대로이지만, 세포 하나에 든 효소는 <b>분열할 때마다 절반</b>으로 줄어든다. 이 모형은 세포 하나만 보고 분열을 넣지 않아 효소가 줄지 않는다.</li>
+            <li>다른 점 ② — 이 실험에서는 실험자가 유도물질을 없앴다. 이 모형에서는 효소가 젖당을 스스로 다 분해해서 전사가 멈춘다.</li>
+          </ul>
+        </div>
+        <div class="src">그림: J. Monod, 「From enzymatic adaptation to allosteric transitions」 노벨상 강연(1965) 그림 2 — 원래 그림에서 읽은 근삿값으로 다시 그렸다(원문: 노벨상 누리집 nobelprize.org).</div>
       </div>
     </div>
     <div class="secreset"><button type="button" onclick="resetSec('time')">↻ ⑤ 시간을 처음으로 되돌리기</button></div>
@@ -1544,7 +1593,7 @@ function tick(n){
     state.hist.push(r.next);
     if (hadLac && r.next.L === 0){
       msg = '🔎 젖당이 <b>모두 분해되었다</b>. 이제 젖당 유도체가 없으므로 억제단백질이 다시 작동부위에 결합하고 <b>전사가 멈춘다</b>(아래 무대). ' +
-            '효소 수를 보시오 — 이 모형에서는 이미 만들어진 효소가 남아 있다.';
+            '효소 수를 보시오 — 이 모형에서는 이미 만들어진 효소가 남아 있다. 젖당을 다시 넣어 처음과 비교하시오(아래 ㉯ 의 표).';
       break;     /* ★바뀌는 순간에 멈춘다 — ⏩ 5칸으로 지나쳐 버리지 않게 */
     }
   }
@@ -1560,60 +1609,163 @@ function tick(n){
   renderTime();
   updateAll();
 }
+/* ★그래프는 원인 → 결과 차례로 위에서 아래로 쌓는다 — ㉠ 전사 → ㉡ 효소 → ㉢ 그 칸에 분해된 젖당 → ㉣ 남은 젖당.
+   ★값의 자리(2026-10-27 교사: 「엄밀하지 못하다」) —
+     점(시간 t) = t 칸이 시작할 때의 수(젖당은 넣은 뒤) · 띠·막대(칸 t → t+1) = 그 칸 동안 일어난 일.
+     한 칸 안의 차례는 규칙대로 ① 효소 한 벌 생김 → ② 그 효소까지 모두 분해.
+     그래서 ㉡ 의 계단은 칸이 시작하자마자 올라가고, 그 높이가 바로 아래 ㉢ 막대의 높이(효소가 분해할 수 있는 몫)와 같다.
+   ★㉡ 과 ㉢ 은 같은 눈금(0~20)을 쓴다 — 같은 높이 = 같은 수. 옛 그래프는 젖당(개)과 효소(벌)를 한 축에 그렸다. */
+var TG = { X0:58, X1:680,
+  band:{ y0:22, y1:40 },
+  enz:{ y0:74,  y1:154, max:Y_MAX, ticks:[0, 10, 20] },
+  dec:{ y0:188, y1:268, max:Y_MAX, ticks:[0, 10, 20] },
+  lac:{ y0:302, y1:382, max:L_MAX, ticks:[0, 8, 16] },
+  axisY:402 };
+/* 칸 i 동안 분해된 젖당 — h[i+1].L 은 다음 칸에 넣은 젖당이 더해져 있을 수 있으니 timeStep 으로 다시 셈한다 */
+function decOf(h, i){ return h[i].L - timeStep(h[i]).next.L; }
+/* 칸 t 가 시작할 때, 젖당을 넣기 전의 수 */
+function preAdd(h, t){ return t === 0 ? 0 : timeStep(h[t - 1]).next.L; }
+/* ㉡ ㉢ 눈금 — 10 을 넘기 전에는 0~10(1벌 차이가 보이게), 넘으면 0~20. 둘은 언제나 함께 바뀐다 */
+function tmScale(h){
+  var big = h.some(function(e){ return e.E > 10; });
+  var m = big ? Y_MAX : 10, tk = big ? [0, 10, 20] : [0, 5, 10];
+  TG.enz.max = TG.dec.max = m; TG.enz.ticks = TG.dec.ticks = tk;
+}
 function tmGraphSvg(){
-  var X0 = 52, X1 = 680, YT = 18, YB = 222, BAND0 = 252, BAND1 = 272;
-  function gx(t){ return X0 + (X1 - X0) * t / T_MAX; }
-  function gy(v){ return YB - (YB - YT) * Math.min(v, Y_MAX) / Y_MAX; }
-  var s = '', i, h = state.hist;
-  /* 눈금 — 왼쪽에 수, 아래에 시간 */
-  [0, 5, 10, 15, 20].forEach(function(v){
-    s += '<line x1="' + X0 + '" y1="' + gy(v) + '" x2="' + X1 + '" y2="' + gy(v) + '" stroke="#E3E6EA" stroke-width="1"/>';
-    s += txt('', X0 - 8, gy(v) + 5, String(v), 13, C_SUB, 'end', 400);
-  });
+  var G = TG, h = state.hist, s = '', i, now = h.length - 1;
+  tmScale(h);
+  function gx(t){ return G.X0 + (G.X1 - G.X0) * t / T_MAX; }
+  function py(P, v){ return P.y1 - (P.y1 - P.y0) * Math.min(v, P.max) / P.max; }
+  function frame(P){
+    var r = '';
+    P.ticks.forEach(function(v){
+      r += '<line x1="' + G.X0 + '" y1="' + py(P, v) + '" x2="' + G.X1 + '" y2="' + py(P, v) + '" stroke="#E3E6EA" stroke-width="1"/>';
+      r += txt('', G.X0 - 8, py(P, v) + 5, String(v), 13, C_SUB, 'end', 400);
+    });
+    r += '<line x1="' + G.X0 + '" y1="' + P.y0 + '" x2="' + G.X0 + '" y2="' + P.y1 + '" stroke="#9AA1AC" stroke-width="1.5"/>';
+    r += '<line x1="' + G.X0 + '" y1="' + P.y1 + '" x2="' + G.X1 + '" y2="' + P.y1 + '" stroke="#9AA1AC" stroke-width="1.5"/>';
+    return r;
+  }
+  /* 세로 눈금 — 5칸마다, 네 칸을 꿰뚫어 같은 시간을 맞춰 읽게 한다 */
   for (i = 0; i <= T_MAX; i += 5){
-    s += txt('', gx(i), YB + 18, String(i), 13, C_SUB, 'middle', 400);
+    s += '<line x1="' + gx(i) + '" y1="' + G.band.y0 + '" x2="' + gx(i) + '" y2="' + G.lac.y1 + '" stroke="#EEF0F3" stroke-width="1"/>';
+    s += txt('', gx(i), G.axisY, String(i), 13, C_SUB, 'middle', 400);
   }
-  s += '<line x1="' + X0 + '" y1="' + YB + '" x2="' + X1 + '" y2="' + YB + '" stroke="#9AA1AC" stroke-width="1.5"/>';
-  s += '<line x1="' + X0 + '" y1="' + YT + '" x2="' + X0 + '" y2="' + YB + '" stroke="#9AA1AC" stroke-width="1.5"/>';
-  s += txt('', X0 + 4, YT - 4, '개수', 12.5, C_SUB, 'start', 700);
-  s += txt('', X1, 294, '시간 →', 13, C_SUB, 'end', 700);
-  /* 전사 띠 — 그 칸 동안 전사가 일어났으면 보라로 칠한다 */
-  s += txt('', X0 - 8, BAND1 - 4, '전사', 13, C_RNA_INK, 'end', 700);
-  s += '<rect x="' + X0 + '" y="' + BAND0 + '" width="' + (X1 - X0) + '" height="' + (BAND1 - BAND0) + '" fill="#F4F1FB" stroke="#D9CFF2"/>';
+  s += txt('', G.X1, G.axisY + 20, '시간 (칸) →', 13, C_SUB, 'end', 700);
+  /* ㉠ 전사 띠 */
+  s += txt('', G.X0, G.band.y0 - 7, '㉠ 전사가 일어난 칸', 14, C_RNA_INK, 'start', 700);
+  s += '<rect x="' + G.X0 + '" y="' + G.band.y0 + '" width="' + (G.X1 - G.X0) + '" height="' + (G.band.y1 - G.band.y0) + '" fill="#F4F1FB" stroke="#D9CFF2"/>';
   for (i = 0; i < h.length; i++){
-    if (h[i].tx) s += '<rect x="' + gx(i) + '" y="' + BAND0 + '" width="' + (gx(i + 1) - gx(i)) + '" height="' + (BAND1 - BAND0) + '" fill="' + C_RNA + '"/>';
+    if (h[i].tx) s += '<rect x="' + gx(i) + '" y="' + G.band.y0 + '" width="' + (gx(i + 1) - gx(i)) + '" height="' + (G.band.y1 - G.band.y0) + '" fill="' + C_RNA + '"/>';
   }
-  /* 계단선 — 젖당(올리브 실선 · 동그라미) · 효소(검정 점선 · 네모) */
-  function stepLine(get, col, dash){
-    var d = '', j;
-    for (j = 0; j < h.length; j++){
-      var v = get(h[j]);
-      d += (j ? ' L' + gx(j) + ',' + gy(v) : 'M' + gx(0) + ',' + gy(v));
-      if (j < h.length - 1) d += ' L' + gx(j + 1) + ',' + gy(v);
+  /* ㉡ 있는 효소 — 칸이 시작하자마자 한 벌 늘고 그 칸 내내 그 수로 일한다 */
+  s += txt('', G.X0, G.enz.y0 - 9, '㉡ 있는 효소 (벌)', 14, C_INK, 'start', 700);
+  s += frame(G.enz);
+  var d = 'M' + gx(0) + ',' + py(G.enz, h[0].E);
+  for (i = 0; i < now; i++) d += ' L' + gx(i) + ',' + py(G.enz, h[i + 1].E) + ' L' + gx(i + 1) + ',' + py(G.enz, h[i + 1].E);
+  s += '<path d="' + d + '" fill="none" stroke="' + C_INK + '" stroke-width="2.5"/>';
+  for (i = 0; i < h.length; i++){
+    s += '<rect x="' + (gx(i) - 4) + '" y="' + (py(G.enz, h[i].E) - 4) + '" width="8" height="8" fill="#fff" stroke="' + C_INK + '" stroke-width="2"/>';
+  }
+  /* ㉢ 그 칸에 분해된 젖당 = 젖당이 줄어드는 빠르기 · 점선 = 효소가 분해할 수 있었던 몫(남은 젖당이 모자란 칸) */
+  s += txt('', G.X0, G.dec.y0 - 9, '㉢ 그 칸에 분해된 젖당 (개) — 줄어드는 빠르기', 14, C_LAC_INK, 'start', 700);
+  s += frame(G.dec);
+  for (i = 0; i < now; i++){
+    var dec = decOf(h, i), cap = h[i + 1].E, bx = gx(i) + 4, bw = gx(i + 1) - gx(i) - 8;
+    if (cap > dec) s += '<rect x="' + bx + '" y="' + py(G.dec, cap) + '" width="' + bw + '" height="' + (G.dec.y1 - py(G.dec, cap)) + '" fill="none" stroke="' + C_INK + '" stroke-width="1.5" stroke-dasharray="4,3"/>';
+    if (dec > 0){
+      s += '<rect x="' + bx + '" y="' + py(G.dec, dec) + '" width="' + bw + '" height="' + (G.dec.y1 - py(G.dec, dec)) + '" fill="' + C_LAC + '"/>';
+      s += txt('', bx + bw / 2, Math.min(py(G.dec, Math.max(dec, cap)), G.dec.y1) - 4, String(dec), 12.5, C_LAC_INK, 'middle', 700);
     }
-    return '<path d="' + d + '" fill="none" stroke="' + col + '" stroke-width="3"' + (dash ? ' stroke-dasharray="' + dash + '"' : '') + '/>';
   }
-  /* 젖당은 넣은 뒤의 값으로 그린다 — 칸이 바뀌는 순간 줄어든다 */
-  s += stepLine(function(e){ return e.L; }, C_LAC, '');
-  s += stepLine(function(e){ return e.E; }, C_INK, '7,5');
+  /* ㉣ 남은 젖당 — 넣은 칸은 넣기 전 → 넣은 뒤로 곧게 올린다 */
+  s += txt('', G.X0, G.lac.y0 - 9, '㉣ 남은 젖당 (개)', 14, C_LAC_INK, 'start', 700);
+  s += frame(G.lac);
+  d = '';
   for (i = 0; i < h.length; i++){
-    s += '<circle cx="' + gx(i) + '" cy="' + gy(h[i].L) + '" r="4.5" fill="' + C_LAC + '" stroke="#fff" stroke-width="1.5"/>';
-    s += '<rect x="' + (gx(i) - 4) + '" y="' + (gy(h[i].E) - 4) + '" width="8" height="8" fill="#fff" stroke="' + C_INK + '" stroke-width="2"/>';
-    if (h[i].add) s += txt('', gx(i), gy(h[i].L) - 10, '🥛', 14, C_LAC_INK, 'middle', 400);
+    var pre = preAdd(h, i);
+    d += (i ? ' L' : 'M') + gx(i) + ',' + py(G.lac, pre);
+    if (h[i].L !== pre) d += ' L' + gx(i) + ',' + py(G.lac, h[i].L);
   }
+  s += '<path d="' + d + '" fill="none" stroke="' + C_LAC + '" stroke-width="3"/>';
+  for (i = 0; i < h.length; i++){
+    s += '<circle cx="' + gx(i) + '" cy="' + py(G.lac, h[i].L) + '" r="4.5" fill="' + C_LAC + '" stroke="#fff" stroke-width="1.5"/>';
+    if (h[i].add) s += txt('', gx(i), py(G.lac, h[i].L) - 9, '🥛', 14, C_LAC_INK, 'middle', 400);
+  }
+  /* 지금 — 네 칸을 꿰뚫는 세로선 */
+  s += '<line x1="' + gx(now) + '" y1="' + (G.band.y0 - 2) + '" x2="' + gx(now) + '" y2="' + (G.lac.y1 + 2) + '" stroke="' + C_BLUE + '" stroke-width="1.5" stroke-dasharray="5,4"/>';
+  s += txt('', gx(now), G.axisY + 20, '▲ 지금', 13, C_BLUE, now > T_MAX - 3 ? 'end' : 'middle', 700);
+  return s;
+}
+/* 젖당을 넣은 차례마다 — 넣을 때 있던 효소 · 칸마다 분해된 수 · 다 쓰이기까지 걸린 칸 (㉯ 의 표) */
+function lacRuns(h){
+  var runs = [], cur = null, i;
+  for (i = 0; i < h.length; i++){
+    if (h[i].add && !cur) cur = { t0:i, e0:h[i].E, dec:[], t1:-1 };
+    if (cur && i < h.length - 1){
+      cur.dec.push(decOf(h, i));
+      if (timeStep(h[i]).next.L === 0){ cur.t1 = i + 1; runs.push(cur); cur = null; }
+    }
+  }
+  if (cur) runs.push(cur);
+  return runs;
+}
+function runsHtml(){
+  var runs = lacRuns(state.hist);
+  if (!runs.length) return '<div class="none">「🥛 젖당 넣기」 를 누르면 여기에 기록된다.</div>';
+  var r = '<table><tr><th>넣은 차례</th><th>넣을 때 있던 효소</th><th>칸마다 분해된 젖당</th><th>다 쓰이기까지</th></tr>';
+  runs.forEach(function(u, k){
+    r += '<tr><td>' + (k + 1) + '번째</td><td>' + u.e0 + '벌</td><td>' + (u.dec.length ? u.dec.join(' → ') : '—') + '</td>' +
+         '<td>' + (u.t1 >= 0 ? '<b>' + (u.t1 - u.t0) + '칸</b>' : '아직 남음') + '</td></tr>';
+  });
+  return r + '</table>';
+}
+/* ㉰ 모노의 실험 — 노벨상 강연(1965) 그림 2 를 그림에서 읽은 근삿값으로 다시 그린다.
+   가로 = 세균 단백질 (µg) · 세로 = β-갈락토시데이스 (µg) · 기울기 P = 0.066 · 유도물질 넣음 ≈13 · 없앰 ≈63 */
+var MONOD_PTS = [[0.3,0],[7.9,0],[14.7,0.18],[18.3,0.26],[23.7,0.69],[32.7,1.27],[45.7,2.24],[58.1,3.25],[72.5,3.42],[85.8,3.49]];
+var MONOD_LINE = [[0,0],[13.3,0],[63,3.43],[90,3.43]];
+function monodSvg(){
+  var X0 = 70, X1 = 540, YT = 30, YB = 250, s = '';
+  function mx(v){ return X0 + (X1 - X0) * v / 90; }
+  function my(v){ return YB - (YB - YT) * v / 4; }
+  [0, 1, 2, 3, 4].forEach(function(v){
+    s += '<line x1="' + X0 + '" y1="' + my(v) + '" x2="' + X1 + '" y2="' + my(v) + '" stroke="#E3E6EA" stroke-width="1"/>';
+    s += txt('', X0 - 8, my(v) + 5, String(v), 13, C_SUB, 'end', 400);
+  });
+  [0, 30, 60, 90].forEach(function(v){ s += txt('', mx(v), YB + 20, String(v), 13, C_SUB, 'middle', 400); });
+  s += '<line x1="' + X0 + '" y1="' + YT + '" x2="' + X0 + '" y2="' + YB + '" stroke="#9AA1AC" stroke-width="1.5"/>';
+  s += '<line x1="' + X0 + '" y1="' + YB + '" x2="' + X1 + '" y2="' + YB + '" stroke="#9AA1AC" stroke-width="1.5"/>';
+  s += txt('', X0, YT - 12, '젖당 분해효소 (μg)', 13.5, C_INK, 'start', 700);
+  s += txt('', X1, YB + 44, '세균 단백질의 양 (μg) — 세균이 자란 정도 →', 13.5, C_INK, 'end', 700);
+  s += '<path d="' + MONOD_LINE.map(function(p, k){ return (k ? 'L' : 'M') + mx(p[0]) + ',' + my(p[1]); }).join(' ') + '" fill="none" stroke="' + C_INK + '" stroke-width="2.5"/>';
+  MONOD_PTS.forEach(function(p){
+    s += '<rect x="' + (mx(p[0]) - 4.5) + '" y="' + (my(p[1]) - 4.5) + '" width="9" height="9" fill="#fff" stroke="' + C_INK + '" stroke-width="2"/>';
+  });
+  /* 넣음 · 없앰 화살표 */
+  function arrow(v, y0, y1, label, anchor){
+    return '<line x1="' + mx(v) + '" y1="' + y0 + '" x2="' + mx(v) + '" y2="' + (y1 - 7) + '" stroke="' + C_BLUE + '" stroke-width="2"/>' +
+           '<path d="M' + (mx(v) - 5) + ',' + (y1 - 9) + ' L' + mx(v) + ',' + y1 + ' L' + (mx(v) + 5) + ',' + (y1 - 9) + ' Z" fill="' + C_BLUE + '"/>' +
+           txt('', mx(v) + (anchor === 'end' ? 4 : -4), y0 - 6, label, 13.5, C_BLUE, anchor, 700);
+  }
+  s += arrow(13.3, my(1.05), my(0) - 3, '유도물질 넣음', 'start');
+  s += arrow(63, my(4) + 2, my(3.43) - 6, '유도물질 없앰', 'middle');
+  s += txt('', mx(40), my(2.35) - 14, '일정하게 늘어남', 13.5, C_SUB, 'end', 700);
+  s += txt('', mx(77), my(3.43) + 24, '그대로 유지', 13.5, C_SUB, 'middle', 700);
   return s;
 }
 function renderTime(){
   setHTML('tmGraph', tmGraphSvg());
-  var c = curEntry(), on = c.L > 0;
+  var h = state.hist, c = curEntry(), on = c.L > 0, t = curT();
   setHTML('tmStat',
     '<div class="st lac"><span class="sv">' + c.L + '</span><span class="sk">젖당 (개)</span></div>' +
     '<div class="st enz"><span class="sv">' + c.E + '</span><span class="sk">효소 (벌)</span></div>' +
+    '<div class="st lac"><span class="sv">' + (t > 0 ? decOf(h, t - 1) : '—') + '</span><span class="sk">직전 칸에 분해된 젖당</span></div>' +
     '<div class="st tx' + (on ? '' : ' off') + '"><span class="sv">' + (on ? '○' : '✕') + '</span><span class="sk">지금 전사가 일어나는가</span></div>');
+  setHTML('tmRuns', runsHtml());
   var pg = document.getElementById('tmProg');
-  if (pg) pg.textContent = '시간 ' + curT() + ' / ' + T_MAX;
-  setDisabled('btnTick', curT() >= T_MAX);
-  setDisabled('btnTick5', curT() >= T_MAX);
+  if (pg) pg.textContent = '시간 ' + t + ' / ' + T_MAX;
+  setDisabled('btnTick', t >= T_MAX);
+  setDisabled('btnTick5', t >= T_MAX);
   stgRender('tm');
 }
 
@@ -2163,9 +2315,10 @@ function restoreUI(){
   setHTML('ob_lg', legendHtml(true, true));
   setHTML('mu_lg', legendHtml(true, true));
   setHTML('tm_glg',
-    lgItem('<line x1="2" y1="9" x2="30" y2="9" stroke="' + C_LAC + '" stroke-width="3"/><circle cx="16" cy="9" r="4.5" fill="' + C_LAC + '" stroke="#fff" stroke-width="1.5"/>', 32, 18, '0 0 32 18', '젖당 (개)') +
-    lgItem('<line x1="2" y1="9" x2="30" y2="9" stroke="' + C_INK + '" stroke-width="3" stroke-dasharray="7,5"/><rect x="12" y="5" width="8" height="8" fill="#fff" stroke="' + C_INK + '" stroke-width="2"/>', 32, 18, '0 0 32 18', '효소 (벌)') +
-    lgItem('<rect x="2" y="3" width="28" height="12" fill="' + C_RNA + '"/>', 32, 18, '0 0 32 18', '전사가 일어난 시간'));
+    lgItem('<rect x="8" y="2" width="16" height="14" fill="' + C_LAC + '"/>', 32, 18, '0 0 32 18', '분해된 젖당') +
+    lgItem('<rect x="8" y="2" width="16" height="14" fill="none" stroke="' + C_INK + '" stroke-width="1.5" stroke-dasharray="4,3"/>', 32, 18, '0 0 32 18', '효소가 더 분해할 수 있었던 몫') +
+    lgItem('<line x1="16" y1="1" x2="16" y2="17" stroke="' + C_BLUE + '" stroke-width="1.5" stroke-dasharray="5,4"/>', 32, 18, '0 0 32 18', '지금'));
+  setHTML('tmReal', monodSvg());
   renderQuizInto(Q_STRUCT, 'structQ', 'dna');
   renderQuizInto(Q_NOLAC,  'nolacQ',  'rep');
   renderQuizInto(Q_LAC,    'lacQ',    'lac');
